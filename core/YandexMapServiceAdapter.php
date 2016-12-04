@@ -8,6 +8,13 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 {
 	protected $api;
 
+	protected $arToponims = [
+		'house',
+		'street',
+		'district',
+		'metro'
+	];
+
 	/**
 	 * @var array
 	 *
@@ -30,16 +37,6 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 		 */
 		$this->api = new Api();
 
-		/*
-		 * Здесь какая то фигня тут надо придумать что то
-		 */
-		$this->api->setArea(
-			$this->arRestrictions['moscow'][0],
-			$this->arRestrictions['moscow'][1],
-			$this->arRestrictions['moscow'][2],
-			$this->arRestrictions['moscow'][3]
-		);
-		$this->api->useAreaLimit(true);
 	}
 
 	/**
@@ -49,37 +46,54 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 	 * Получаем информацию об объекте по его координате, рассматриваемт только те объекты информация о которых
 	 * указана с точностью до номера дома. Собираем данные до района. Метро выделенно в отдельный метод
 	 */
-	public function getObjectByPoint($point)
+	public function getObjectByPoint($point, $arToponims = [])
 	{
-		/*
-		 * помоему лимит не работает, хотя в запросе передается яндексу
-		 */
+		if (empty($arToponims))
+		{
+			$arToponims = $this->arToponims;
+		}
+		else
+		{
+			$arToponims = array_intersect($this->arToponims, $arToponims);
+		}
+
 		$this->api
 			->setPoint($point[0], $point[1])
-			->setLimit(3)
+			->setLimit(100)
 			->load();
 
 		$response = $this->api->getResponse();
 		$collection = $response->getList();
-
 		if (!empty($collection))
 		{
 			$arObject = [];
-			foreach ($collection as $item)
+			foreach ($arToponims as $toponim)
 			{
-				$kind = $item->getKind();
-				if ($kind == Api::KIND_HOUSE)
+				foreach ($collection as $key => $item)
 				{
-					$arObject[Api::KIND_HOUSE] = $item->getPremiseNumber();
-				}
-				elseif ($kind == Api::KIND_STREET)
-				{
-					$arObject[Api::KIND_STREET] = $item->getThoroughfareName();
-				}
-				elseif ($kind == Api::KIND_DISTRICT)
-				{
-					$arObject[Api::KIND_DISTRICT] = $item->getDependentLocalityName();
-					break;
+					$kind = $item->getKind();
+
+					if ($kind == $toponim && $kind != Api::KIND_METRO)
+					{
+						if ($kind == Api::KIND_HOUSE)
+						{
+							$arObject[Api::KIND_HOUSE] = $item->getPremiseNumber();
+							unset($collection[$key]);
+							break;
+						}
+						elseif ($kind == Api::KIND_STREET)
+						{
+							$arObject[Api::KIND_STREET] = $item->getThoroughfareName();
+							unset($collection[$key]);
+							break;
+						}
+						elseif ($kind == Api::KIND_DISTRICT)
+						{
+							$arObject[Api::KIND_DISTRICT] = $item->getDependentLocalityName();
+							unset($collection[$key]);
+							break;
+						}
+					}
 				}
 			}
 
@@ -89,7 +103,11 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 			}
 			else
 			{
-				$arObject[Api::KIND_METRO] = $this->getMetroByPoint($point);
+				if (!in_array($arObject[Api::KIND_METRO], $arToponims))
+				{
+					$arObject[Api::KIND_METRO] = $this->getMetroByPoint($point);
+				}
+
 				return $arObject;
 			}
 		}
@@ -107,12 +125,18 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 	 * Возвращет набор координат соответствующий адрессу в запросе. Возвращает только объекты у которых точность
 	 * указана до номера дома
 	 */
-	public function getPointsByAddress($address, $maxPoints)
+	public function getPointsByAddress($address, $maxPoints, $arRestrictArea = [])
 	{
 		$this->api->setQuery($address);
+
+		if (empty($arRestrictArea))
+		{
+			$arRestrictArea = $this->arRestrictions['moscow'];
+		}
+
 		$this->api
 			->setLimit($maxPoints)
-			->setLang(Api::LANG_RU)
+			->setArea($arRestrictArea[0], $arRestrictArea[1], $arRestrictArea[2], $arRestrictArea[3])
 			->load();
 
 		$response = $this->api->getResponse();
@@ -147,9 +171,9 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 	 * @param int $count
 	 * @return array|bool
 	 *
-	 * Возвращает станции метро, ближайшие к заданной координате
+	 * Для ментро отдельный метод пришлось делать, т.к если не указывать топоним то не всегда его выбирает
 	 */
-	public function getMetroByPoint($point, $count = 5)
+	protected function getMetroByPoint($point, $count = 5)
 	{
 		$this->api
 			->setPoint($point[0], $point[1])
@@ -168,67 +192,10 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 			}
 
 			return $arMetro;
-		} else {
+		}
+		else
+		{
 			return false;
 		}
 	}
-
-	/*
-		public function getHouseByPoint($point)
-		{
-			$this->api
-				->setPoint($point[0], $point[1])
-				->setLimit(1)
-				->setKind(Api::KIND_HOUSE)
-				->load();
-			$response = $this->api->getResponse();
-			$collection = $response->getList();
-			if (!empty($collection))
-			{
-				return $collection[0]->getRawData()['name'];
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		public function getStreetByPoint($point)
-		{
-			$this->api
-				->setPoint($point[0], $point[1])
-				->setLimit(1)
-				->setKind(Api::KIND_STREET)
-				->load();
-			$response = $this->api->getResponse();
-			$collection = $response->getList();
-			if (!empty($collection))
-			{
-				return $collection[0]->getRawData()['name'];
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		public function getDistrictByPoint($point)
-		{
-			$this->api
-				->setPoint($point[0], $point[1])
-				->setLimit(1)
-				->setKind(Api::KIND_DISTRICT)
-				->load();
-
-			$response = $this->api->getResponse();
-			$collection = $response->getList();
-			if (!empty($collection))
-			{
-				return $collection[0]->getRawData()['name'];
-			}
-			else
-			{
-				return false;
-			}
-		}*/
 }

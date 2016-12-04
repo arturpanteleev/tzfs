@@ -10,13 +10,6 @@ namespace Core;
  */
 interface MapServiceAdapter
 {
-	public function getObjectByPoint($point);
-
-	public function getPointsByAddress($address, $maxPoint);
-
-	public function getMetroByPoint($point, $count = 5);
-	/*public function getHouseByPoint($point);
-	public function getStreetByPoint($point);
-	public function getDistrictByPoint($point);*/
-
+	public function getObjectByPoint($point, $arToponims);
+	public function getPointsByAddress($address, $maxPoint, $arRestrictArea);
 }

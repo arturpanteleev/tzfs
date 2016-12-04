@@ -9,17 +9,18 @@ namespace Core;
  */
 class MapObjectService
 {
-	protected $cacheTtl = 60 * 60 * 24;
+	protected $cacheManager;
 	protected $dataProvider;
 
 	/**
 	 * MapObjectService constructor.
-	 * @param MapServiceAdapter $dataProvider параметр принмает объект реализующий интерфейс для получения объектов с
-	 * от сервисов карт
+	 * @param MapServiceAdapter $dataProvider
+	 * @param CacheInterface $cache
 	 */
-	public function __construct(MapServiceAdapter $dataProvider)
+	public function __construct(MapServiceAdapter $dataProvider, CacheInterface $cache)
 	{
 		$this->dataProvider = $dataProvider;
+		$this->cacheManager = $cache;
 	}
 
 	/**
@@ -30,7 +31,7 @@ class MapObjectService
 	 */
 	protected function getObjectByPoint($point)
 	{
-		$arObject = $this->dataProvider->getObjectByPoint($point);
+		$arObject = $this->dataProvider->getObjectByPoint($point, []);
 
 		return $arObject;
 	}
@@ -44,21 +45,15 @@ class MapObjectService
 	 */
 	public function getObjectsByAddress($address, $limit = 10)
 	{
-
-		/**
-		 * Конечно стоило бы передавать какой-нибудь объект, реализующий интерфейс кеширования в конструктор
-		 * но тут я решил сделать упущение, т.к не подключал никаких кеширующих библиотек
-		 */
-		//	if ($serializedObjects = \apcu_fetch($address))
-		if (false)
+		if ($objectFromCache = $this->cacheManager->load($address))
 		{
-			//return $serializedObjects;
+			return $objectFromCache;
 		}
 		else
 		{
 			$arPoints = $this
 				->dataProvider
-				->getPointsByAddress($address, $limit);
+				->getPointsByAddress($address, $limit, []);
 
 			$arObjects = [];
 
@@ -73,7 +68,8 @@ class MapObjectService
 					}
 				}
 
-				//\apcu_add($address,$arObjects);
+				$this->cacheManager->save($address, $arObjects, 3600);
+
 				return $arObjects;
 			}
 			else

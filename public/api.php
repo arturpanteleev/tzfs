@@ -4,6 +4,7 @@ require_once '../vendor/autoload.php';
 
 use Core\YandexMapServiceAdapter;
 use Core\MapObjectService;
+use Core\SimpleCache;
 
 /*
  * тут можно было бы более детально обработать входные параметры но это оставим яндексу
@@ -17,7 +18,7 @@ if (empty($_GET['query'])){
 $query = $_GET['query'];
 $limit = 10;
 
-$objFactory = new MapObjectService(new YandexMapServiceAdapter());
+$objFactory = new MapObjectService(new YandexMapServiceAdapter(), new Core\SimpleCache());
 $arObjects = $objFactory->getObjectsByAddress($query, $limit);
 
 /**

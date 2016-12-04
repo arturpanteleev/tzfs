@@ -11,7 +11,7 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 	/**
 	 * @var array
 	 *
-	 * Это в теории должно браться из базы например, но пока будет заглушка така
+	 * Это в теории должно браться из базы например, но пока будет заглушка такая
 	 */
 	protected $arRestrictions = [
 		'moscow' => [
@@ -68,15 +68,15 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 			foreach ($collection as $item)
 			{
 				$kind = $item->getKind();
-				if ($kind == 'house')
+				if ($kind == Api::KIND_HOUSE)
 				{
 					$arObject[Api::KIND_HOUSE] = $item->getPremiseNumber();
 				}
-				elseif ($kind == 'street')
+				elseif ($kind == Api::KIND_STREET)
 				{
 					$arObject[Api::KIND_STREET] = $item->getThoroughfareName();
 				}
-				elseif ($kind == 'district')
+				elseif ($kind == Api::KIND_DISTRICT)
 				{
 					$arObject[Api::KIND_DISTRICT] = $item->getDependentLocalityName();
 					break;
@@ -124,7 +124,7 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 
 			foreach ($collection as $item)
 			{
-				if ($item->getKind() == 'house')
+				if ($item->getKind() == Api::KIND_HOUSE)
 				{
 					$arPoints[] = [
 						$item->getLongitude(),
@@ -147,7 +147,7 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 	 * @param int $count
 	 * @return array|bool
 	 *
-	 * Возвращает станции метро, близжайшие к заданной координате
+	 * Возвращает станции метро, ближайшие к заданной координате
 	 */
 	public function getMetroByPoint($point, $count = 5)
 	{
@@ -231,6 +231,4 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 				return false;
 			}
 		}*/
-
-
 }

@@ -1,17 +1,29 @@
 <?php
 
 namespace Core;
-
+/**
+ * Class SimpleCache
+ * @package Core
+ *
+ * Простейший класс для кеширования
+ */
 class SimpleCache implements CacheInterface
 {
 	protected $cacheFolder = __DIR__ . '/../cache/';
 	protected $ttl = 3600;
 
+	/**
+	 * SimpleCache constructor.
+	 */
 	public function __construct()
 	{
 
 	}
 
+	/**
+	 * @param $key
+	 * @return bool
+	 */
 	public function load($key)
 	{
 		$file = $this->getFilenameFromKey($key);
@@ -33,6 +45,12 @@ class SimpleCache implements CacheInterface
 		return false;
 	}
 
+	/**
+	 * @param $key
+	 * @param $data
+	 * @param $time
+	 * @return bool
+	 */
 	public function save($key, $data, $time)
 	{
 		$file = $this->getFilenameFromKey($key);
@@ -53,6 +71,9 @@ class SimpleCache implements CacheInterface
 		return false;
 	}
 
+	/**
+	 * @param $key
+	 */
 	public function remove($key)
 	{
 		$file = $this->getFilenameFromKey($key);
@@ -62,6 +83,10 @@ class SimpleCache implements CacheInterface
 		}
 	}
 
+	/**
+	 * @param $key
+	 * @return string
+	 */
 	protected function getFilenameFromKey($key)
 	{
 		return $this->cacheFolder . md5($key);

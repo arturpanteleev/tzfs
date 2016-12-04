@@ -120,6 +120,7 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 	/**
 	 * @param $address
 	 * @param $maxPoints
+	 * @param array $arRestrictArea
 	 * @return array|bool
 	 *
 	 * Возвращет набор координат соответствующий адрессу в запросе. Возвращает только объекты у которых точность
@@ -171,7 +172,7 @@ class YandexMapServiceAdapter implements MapServiceAdapter
 	 * @param int $count
 	 * @return array|bool
 	 *
-	 * Для ментро отдельный метод пришлось делать, т.к если не указывать топоним то не всегда его выбирает
+	 * Для метро отдельный метод пришлось делать, т.к если не указывать топоним то не всегда его выбирает
 	 */
 	protected function getMetroByPoint($point, $count = 5)
 	{
